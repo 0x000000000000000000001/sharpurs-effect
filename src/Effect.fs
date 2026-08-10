@@ -1,32 +1,45 @@
 let pureE = box (fun (a: obj) -> box (fun _ -> a))
-let bindE = box (fun (a: obj) -> box (fun (f: obj) -> box (fun _ -> let a_res = sharpurs_apply a undefined in let f_res = sharpurs_apply f a_res in sharpurs_apply f_res undefined)))
+let bindE = box (fun (a: obj) -> box (fun (f: obj) -> box (fun _ -> 
+    let a' = a :?> (obj -> obj)
+    let f' = f :?> (obj -> obj)
+    let a_res = a' null
+    let f_res = f' a_res :?> (obj -> obj)
+    f_res null
+)))
 
 let untilE = box (fun (f: obj) -> box (fun _ ->
+    let f' = f :?> (obj -> obj)
     let mutable condition = false
     while not condition do
-        condition <- unbox<bool> (sharpurs_apply f undefined)
-    undefined
+        condition <- unbox<bool> (f' null)
+    null
 ))
 
 let whileE = box (fun (f: obj) -> box (fun (a: obj) -> box (fun _ ->
-    let mutable condition = unbox<bool> (sharpurs_apply f undefined)
+    let f' = f :?> (obj -> obj)
+    let a' = a :?> (obj -> obj)
+    let mutable condition = unbox<bool> (f' null)
     while condition do
-        sharpurs_apply a undefined |> ignore
-        condition <- unbox<bool> (sharpurs_apply f undefined)
-    undefined
+        a' null |> ignore
+        condition <- unbox<bool> (f' null)
+    null
 )))
 
 let forE = box (fun (lo: obj) -> box (fun (hi: obj) -> box (fun (f: obj) -> box (fun _ ->
+    let f' = f :?> (obj -> obj)
     let l = unbox<int> lo
     let h = unbox<int> hi
     for i = l to h - 1 do
-        sharpurs_apply (sharpurs_apply f (box i)) undefined |> ignore
-    undefined
+        let step = f' (box i) :?> (obj -> obj)
+        step null |> ignore
+    null
 ))))
 
 let foreachE = box (fun (arr: obj) -> box (fun (f: obj) -> box (fun _ ->
+    let f' = f :?> (obj -> obj)
     let arr' = unbox<obj[]> arr
     for v in arr' do
-        sharpurs_apply (sharpurs_apply f v) undefined |> ignore
-    undefined
+        let step = f' v :?> (obj -> obj)
+        step null |> ignore
+    null
 )))
